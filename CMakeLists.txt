@@ -152,7 +152,7 @@ if(EMSCRIPTEN)
         "${CMAKE_BINARY_DIR}/gui.wasm"
     )
     foreach(F IN LISTS JS_RESULT)
-        set(INDEX_DIR "${CMAKE_SOURCE_DIR}/gui/index_html")
+        set(INDEX_DIR "${CMAKE_SOURCE_DIR}/docs")
         add_custom_command(
             TARGET gui POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${F} ${INDEX_DIR}

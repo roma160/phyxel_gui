@@ -48,7 +48,7 @@ emcmake cmake -S . -B ./build/emscripten_build
 # Build the gui target
 cmake --build ./build/emscripten_build --target gui
 ```
-3. If there are no errors, this must be the thing. Now you could serve a Python server from an [`index_html`](./gui/index_html/) folder:
+3. If there are no errors, this must be the thing. Now you could serve a Python server from a [`docs`](./docs) folder:
 ```console
-python -m http.server --directory ./gui/index_html/ 8000
+python -m http.server --directory ./docs 8000
 ```
