@@ -126,7 +126,7 @@ target_include_directories(BOX2D PUBLIC "${BOX2D_DIR}/include")
 
 #=================== PhyxelEngine ===================
 
-set(PHYXEL_ENGINE_DIR "${CMAKE_SOURCE_DIR}/PhyxelEngineSource")
+set(PHYXEL_ENGINE_DIR "${LIBS_DIR}/phyxel")
 file(GLOB_RECURSE "PHYXEL_ENGINE_SOURCES" "${PHYXEL_ENGINE_DIR}/**.hpp")
 # message(WARNING ${PHYXEL_ENGINE_SOURCES})
 
@@ -143,21 +143,21 @@ target_link_libraries(PHYXEL_ENGINE INTERFACE BOX2D)
 add_executable(gui "${CMAKE_SOURCE_DIR}/gui/main.cpp")
 target_link_libraries(gui PRIVATE IMGUI PHYXEL_ENGINE)
 
-# if(EMSCRIPTEN)
-#     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Os")
+if(EMSCRIPTEN)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Os")
 
-#     set(
-#         JS_RESULT
-#         "${CMAKE_BINARY_DIR}/main.js"
-#         "${CMAKE_BINARY_DIR}/main.wasm"
-#     )
-#     foreach(F IN LISTS JS_RESULT)
-#     set(INDEX_DIR "${CMAKE_SOURCE_DIR}/docs")
-#     add_custom_command(
-#         TARGET main POST_BUILD
-#         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${F} ${INDEX_DIR}
-#         COMMENT "Copying ${F} to a index directory: ${INDEX_DIR}"
-#     )
-#     endforeach()
+    set(
+        JS_RESULT
+        "${CMAKE_BINARY_DIR}/gui.js"
+        "${CMAKE_BINARY_DIR}/gui.wasm"
+    )
+    foreach(F IN LISTS JS_RESULT)
+        set(INDEX_DIR "${CMAKE_SOURCE_DIR}/gui/index_html")
+        add_custom_command(
+            TARGET gui POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${F} ${INDEX_DIR}
+            COMMENT "Copying ${F} to a index directory: ${INDEX_DIR}"
+        )
+    endforeach()
 
-# endif()
+endif()
