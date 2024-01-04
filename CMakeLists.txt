@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(phyxel_project)
+project(PHYXEL_ENGINE_PROJECT)
 # Initial source is from here
 # https://github.com/roma160/OOP_LAB2_sem2/blob/website/emscripten/CMakeLists.txt
 
@@ -114,15 +114,34 @@ if(NOT EMSCRIPTEN)
     )
 endif()
 
+
+
+#=================== Box2D ===================
+set(BOX2D_DIR "${LIBS_DIR}/box2d")
+file(GLOB_RECURSE "BOX2D_SOURCES" "${BOX2D_DIR}/src/**.cpp")
+# message(WARNING ${BOX2D_SOURCES})
+
+add_library(BOX2D STATIC ${BOX2D_SOURCES})
+target_include_directories(BOX2D PUBLIC "${BOX2D_DIR}/include")
+
 #=================== PhyxelEngine ===================
 
 set(PHYXEL_ENGINE_DIR "${CMAKE_SOURCE_DIR}/PhyxelEngineSource")
+file(GLOB_RECURSE "PHYXEL_ENGINE_SOURCES" "${PHYXEL_ENGINE_DIR}/**.hpp")
+# message(WARNING ${PHYXEL_ENGINE_SOURCES})
+
+# How to make a header library in CMake
+# https://stackoverflow.com/a/60604878/8302811
+add_library(PHYXEL_ENGINE INTERFACE)
+target_include_directories(PHYXEL_ENGINE INTERFACE ${PHYXEL_ENGINE_DIR})
+
+target_link_libraries(PHYXEL_ENGINE INTERFACE BOX2D)
+
 
 #=================== GUI ===================
 
 add_executable(gui "${CMAKE_SOURCE_DIR}/gui/main.cpp")
-target_include_directories(gui PRIVATE "${PHYXEL_ENGINE_DIR}")
-target_link_libraries(gui PRIVATE IMGUI)
+target_link_libraries(gui PRIVATE IMGUI PHYXEL_ENGINE)
 
 # if(EMSCRIPTEN)
 #     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Os")
