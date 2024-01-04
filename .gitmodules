@@ -1,0 +1,13 @@
+[submodule "libs/phyxel"]
+	path = libs/phyxel
+	url = https://gitlab.com/delta_atell/phyxel.git
+[submodule "libs/box2d"]
+	path = libs/box2d
+	url = https://github.com/erincatto/box2d
+[submodule "libs/sdl2"]
+	path = libs/sdl2
+	url = https://github.com/libsdl-org/SDL.git
+	branch = SDL2
+[submodule "./libs/imgui"]
+	path = ./libs/imgui
+	url = https://github.com/ocornut/imgui
