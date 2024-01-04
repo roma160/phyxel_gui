@@ -1,6 +1,6 @@
 [submodule "libs/phyxel"]
 	path = libs/phyxel
-	url = https://gitlab.com/delta_atell/phyxel.git
+	url = https://gitlab.com/roma160/phyxel-suggestions.git
 [submodule "libs/box2d"]
 	path = libs/box2d
 	url = https://github.com/erincatto/box2d
