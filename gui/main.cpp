@@ -267,13 +267,6 @@ int main(int argc, char* argv[])
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
 
-	// It would be better, to just leave the mouse absence as it is
-	#ifdef __EMSCRIPTEN__
-	// But we allow enabling it using args
-	if(!args_set.count("--wheel"))
-		SDL_EventState(SDL_MOUSEWHEEL, SDL_DISABLE);
-	#endif
-
 	// https://github.com/emscripten-ports/SDL2/issues/128
 	typedef tuple<ImGuiIO*, SDL_Window*> filter_user_data_t;
 	filter_user_data_t filter_user_data(&io, window);
@@ -434,6 +427,8 @@ int main(int argc, char* argv[])
 		const auto p = ImGui::GetCursorScreenPos();
 		const auto cursor = ImGui::GetCursorPos();
 		auto available_space = ImGui::GetContentRegionAvail();
+		if(abs(available_space.x) <= 1) available_space.x = 1;
+    	if(abs(available_space.y) <= 1) available_space.y = 1;
 		// https://github.com/ocornut/imgui/issues/3149
 		ImGui::InvisibleButton("canvas", available_space,
 			ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight | ImGuiButtonFlags_AllowOverlap);
