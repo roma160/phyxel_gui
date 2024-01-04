@@ -11,6 +11,3 @@
 [submodule "./libs/imgui"]
 	path = ./libs/imgui
 	url = https://github.com/ocornut/imgui
-[submodule "libs/box2d"]
-	path = libs/box2d
-	url = https://github.com/erincatto/box2d
