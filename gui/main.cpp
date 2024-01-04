@@ -6,6 +6,7 @@
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_opengl3.h"
 #include "misc/cpp/imgui_stdlib.h"
+#include "imgui_internal.h"
 #include <SDL.h>
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <SDL_opengles2.h>
@@ -16,6 +17,7 @@
 #include <tuple>
 #include <vector>
 #include <string>
+#include <sstream>
 
 using namespace std;
 
@@ -178,6 +180,8 @@ static ImGuiKey ImGui_ImplSDL2_KeycodeToImGuiKey(int keycode)
 ImVec4 clear_color(0.45f, 0.55f, 0.60f, .00f);
 bool done = false;
 char materialID = 0;
+unsigned long long int iteration = 0;
+bool play = false;
 
 void show_material_selection_button(char thisMaterialId, string label, ImU32 color) {
 	const bool selected = materialID == thisMaterialId;
@@ -387,6 +391,10 @@ int main(int argc, char* argv[])
 
 		// Displaying the Controls window
 		ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize);
+
+		if (ImGui::Button("Toggle simulation"))
+			play = !play;
+
 		ImGui::DragFloat("Phyxel size", &phyxel_size, .01, 1, 100);
 		
 		ImGui::Text("Materials selection");
@@ -403,11 +411,63 @@ int main(int argc, char* argv[])
 		ImGui::End();
 
 		// Displaying Simulation window
-		ImGui::Begin("Simulation", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
-		ImGui::SetWindowSize({
+		stringstream ss;
+		ss<<"Simulation - Iteration: "<<iteration;
+		if (!play) ss<<" Paused ";
+		ss << "###simulation_window";
+		ImGui::Begin(ss.str().c_str(), nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
+		const ImVec2 window_size = {
 			(float) (phyxel_size * PHX_SCENE_SIZE_X),
 			(float) (phyxel_size * PHX_SCENE_SIZE_Y)
-		});
+		};
+		ImGui::SetWindowSize(window_size);
+
+		const auto p = ImGui::GetCursorScreenPos();
+		const auto cursor = ImGui::GetCursorPos();
+		auto available_space = ImGui::GetContentRegionAvail();
+		// https://github.com/ocornut/imgui/issues/3149
+		ImGui::InvisibleButton("canvas", available_space,
+			ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight | ImGuiButtonFlags_AllowOverlap);
+		ImGui::SetItemAllowOverlap();
+
+		// Rendering the simulation
+		ImDrawList *draw_list = ImGui::GetWindowDrawList();
+
+		// drawing vertical lines
+		const auto lines_color = IM_COL32(255, 255, 255, 50);
+		for (size_t i = 0; i < PHX_VIEW_SIZE_X; i++)
+			draw_list->AddLine(
+				{ p.x + i*phyxel_size, p.y },
+				{ p.x + i*phyxel_size, p.y + window_size.y },
+				lines_color
+			);
+		
+		// drawing horizontal ones
+		for (size_t i = 0; i < PHX_VIEW_SIZE_Y; i++)
+			draw_list->AddLine(
+				{ p.x, p.y + i*phyxel_size },
+				{ p.x + window_size.x, p.y + i*phyxel_size },
+				lines_color
+			);
+
+		// Drawing phyxels
+		for (size_t i = 0; i < PHX_SCENE_SIZE_X * PHX_SCENE_SIZE_Y; i++) {
+			int x = i%PHX_SCENE_SIZE_X;
+			int y = i/PHX_SCENE_SIZE_X;
+            phx::Color c = phx::scene.getColor(i);
+			draw_list->AddRectFilled(
+				{ p.x + x*phyxel_size, p.y + y*phyxel_size },
+				{ p.x + (x + 1)*phyxel_size, p.y + (y + 1)*phyxel_size },
+				IM_COL32(c.r, c.g, c.b, c.a)
+			);
+        }
+
+
+		ImGui::SetCursorPos(cursor);
+		ImGui::SetCursorPosX(
+			window_size.x - ImGui::CalcTextSize("Toggle simulation").x - 15
+		);
+		
 		
 		ImGui::End();
 
