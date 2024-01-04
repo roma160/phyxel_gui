@@ -18,6 +18,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <iostream>
 
 using namespace std;
 
@@ -381,6 +382,14 @@ int main(int argc, char* argv[])
 		ImGui_ImplSDL2_NewFrame();
 		ImGui::NewFrame();
 
+		
+		// DOING SIMULATION TICKS
+		if (play) {
+			phx::scene.updateAll();
+			iteration++;
+		}
+
+
 		// WINDOW RENDERING PIPELINE
 
 		// Displaying the DemoWindow
@@ -417,8 +426,8 @@ int main(int argc, char* argv[])
 		ss << "###simulation_window";
 		ImGui::Begin(ss.str().c_str(), nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
 		const ImVec2 window_size = {
-			(float) (phyxel_size * PHX_SCENE_SIZE_X),
-			(float) (phyxel_size * PHX_SCENE_SIZE_Y)
+			(float) (phyxel_size * PHX_SCENE_SIZE_X) + 15,
+			(float) (phyxel_size * PHX_SCENE_SIZE_Y) + 30
 		};
 		ImGui::SetWindowSize(window_size);
 
@@ -429,6 +438,17 @@ int main(int argc, char* argv[])
 		ImGui::InvisibleButton("canvas", available_space,
 			ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight | ImGuiButtonFlags_AllowOverlap);
 		ImGui::SetItemAllowOverlap();
+
+		// Handling left click on the simulation field
+		if (ImGui::IsItemHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+			auto mousePos = ImGui::GetMousePos();
+            phx::scene.setMaterial(
+				(mousePos.x - p.x) / phyxel_size,
+				(mousePos.y - p.y) / phyxel_size,
+				phx::MaterialsList::get(materialID),
+				rand()
+			);
+		}
 
 		// Rendering the simulation
 		ImDrawList *draw_list = ImGui::GetWindowDrawList();
@@ -464,11 +484,6 @@ int main(int argc, char* argv[])
 
 
 		ImGui::SetCursorPos(cursor);
-		ImGui::SetCursorPosX(
-			window_size.x - ImGui::CalcTextSize("Toggle simulation").x - 15
-		);
-		
-		
 		ImGui::End();
 
 		//ImGui::getScroll
