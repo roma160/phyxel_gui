@@ -252,6 +252,7 @@ int main(int argc, char* argv[])
 	ImGui_ImplOpenGL3_Init(glsl_version);
 
     simulation_init();
+	gui_init();
 
     // Main loop
 #ifdef EMSCRIPTEN_CODE

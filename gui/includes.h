@@ -1,5 +1,6 @@
 #pragma once
 
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "imgui_impl_sdl2.h"
@@ -40,5 +41,7 @@ static void MainLoopForEmscripten()     { MainLoopForEmscriptenP(); }
 #endif
 
 #define INV_COL32(COL32) (~IM_COL32_A_MASK) ^ COL32
+
+#include "utils.hpp"
 
 #include "phyxel.hpp"

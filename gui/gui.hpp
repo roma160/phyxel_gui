@@ -38,11 +38,12 @@ void show_material_selection_buttons(int ncols, vector<tuple<string, ImU32>> mat
 		if (i % ncols < ncols - 1)
 			ImGui::SameLine();
 	}
+	ImGui::NewLine();
 }
 
 vector<PhyxelWindow> phyxel_windows = {
 	PhyxelWindow(
-		"physical_window",
+		"Physical View", "physical_view",
 		[](){
 			PhyxelWindowRenderData ret;
 			stringstream ss;
@@ -66,6 +67,46 @@ vector<PhyxelWindow> phyxel_windows = {
 				rand()
 			);
 		}
+	),
+
+	PhyxelWindow(
+		"Temperature View", "temperature_view",
+		[]() {
+			float max = phx::scene.getTemperature(0),
+			 	min = phx::scene.getTemperature(0),
+				buff;
+			for (size_t i = 0; i < PHX_SCENE_SIZE_X * PHX_SCENE_SIZE_Y; i++)
+			{
+				buff = phx::scene.getTemperature(i);
+				if (buff > max) max = buff;
+				else if (buff < min) min = buff;
+			}
+
+			PhyxelWindowRenderData ret;
+			stringstream ss;
+			ss << "Temperature at iteration : " << iteration << "; Max: " << max << ", Min: " << min;
+			if (!play)
+				ss << " Paused ";
+			ret.title = ss.str();
+
+			constexpr ImVec4 minCol(0, 0, 156, 255), maxCol(217, 0, 43, 255);
+			for (size_t i = 0; i < PHX_SCENE_SIZE_X * PHX_SCENE_SIZE_Y; i++)
+			{
+				buff = (phx::scene.getTemperature(i) - min) / (max - min);
+				auto color = (maxCol * buff) + (minCol * (1 - buff));
+				ret.phyxels_colors[i % PHX_SCENE_SIZE_X][i / PHX_SCENE_SIZE_X] = 
+					IM_COL32(
+						(unsigned char) color.x,
+						(unsigned char) color.y,
+						(unsigned char) color.z,
+						(unsigned char) color.w
+					);
+			}
+			return ret;
+		},
+		[](float x, float y){
+
+		}
 	)
 };
 
@@ -86,9 +127,16 @@ void simulation_init()
 	acid->addReaction(metal, air, toxic_gas);
 	auto bedrock = phx::MaterialsList::addMaterial("technical bedrock", 0, PHX_MTYPE_SOL, phx::Color(0, 0, 0, 255)); // as for v1.0, a bedrock solid frame around the scene is suggested for multiple reasons. this is planned to be changed later
 
+	
+
 	// this is important. otherwise you're going to have a segfault right at the start
 	phx::scene.fill(air);
 	phx::scene.fillFrame(bedrock); // this is optional but suggested for now
+}
+
+void gui_init() {
+	// Temperature View is not displayed at start
+	phyxel_windows[1].show = false;
 }
 
 void simulation_step()
@@ -116,7 +164,7 @@ void gui_step()
 
 	ImGui::DragFloat("Phyxel size", &phyxel_size, .01, 1, 100);
 
-	ImGui::Text("Materials selection");
+	ImGui::SeparatorText("Materials selection");
 	show_material_selection_buttons(4, {
 		{"breath\nable\n air", IM_COL32(0, 0, 0, 0)},
 		{"dry \nsand", IM_COL32(255, 225, 180, 255)},
@@ -126,6 +174,17 @@ void gui_step()
 		{"myste\nrious\n acid", IM_COL32(100, 255, 100, 255)},
 		{"techn\nical \nbedrock", IM_COL32(0, 0, 0, 255)},
 	});
+
+	ImGui::SeparatorText("Windows toggles");
+	for (int i = 0; i < phyxel_windows.size(); i++) {
+		auto& w = phyxel_windows[i];
+		ImGui::Text(w.name.c_str());
+		ImGui::PushID(i);
+		ImGui::Checkbox("Show", &w.show);
+		ImGui::SameLine();
+		ImGui::Checkbox("Grid", &w.use_grid);
+		ImGui::PopID();
+	}
 
 	ImGui::End();
 

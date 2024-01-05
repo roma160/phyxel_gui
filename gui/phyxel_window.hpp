@@ -18,20 +18,27 @@ private:
     void (*on_click)(float x, float y);
 
 public:
+    const string name;
+
+    bool show = true;
     bool use_grid = true;
 
     /// @param on_click_callback Handles the left mouse click for the given coordinates IN THE WINDOW (not phyxel coordinates)
     // https://stackoverflow.com/a/55885752/8302811
     PhyxelWindow(
+        string name,
         string label,
         PhyxelWindowRenderData (*render_data_getter)(),
         void (*on_click_callback)(float x, float y)
-    ): label("###" + label) {
-        this->get_render_data = render_data_getter;
-        this->on_click = on_click_callback;
-    }
+    ): 
+        label("###" + label), name(name),
+        get_render_data(render_data_getter),
+        on_click(on_click_callback) 
+    {}
 
     void render() {
+        if (!show) return;
+
         auto render_data = get_render_data();
 
         stringstream ss;
