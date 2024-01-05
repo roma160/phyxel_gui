@@ -16,6 +16,7 @@ private:
 
     PhyxelWindowRenderData (*get_render_data)();
     void (*on_click)(float x, float y);
+    void (*on_hover)(float x, float y);
 
 public:
     const string name;
@@ -29,11 +30,13 @@ public:
         string name,
         string label,
         PhyxelWindowRenderData (*render_data_getter)(),
-        void (*on_click_callback)(float x, float y)
+        void (*on_click_callback)(float x, float y) = [](float x, float y){},
+        void (*on_hover_callback)(float x, float y) = [](float x, float y){}
     ): 
         label("###" + label), name(name),
         get_render_data(render_data_getter),
-        on_click(on_click_callback) 
+        on_click(on_click_callback),
+        on_hover(on_hover_callback)
     {}
 
     void render() {
@@ -61,14 +64,18 @@ public:
                             ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight | ImGuiButtonFlags_AllowOverlap);
         ImGui::SetItemAllowOverlap();
 
-        // Handling left click on the simulation field
-        if (ImGui::IsItemHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Left))
+        // Handling mouse hover
+        if (ImGui::IsItemHovered())
         {
-            auto mousePos = ImGui::GetMousePos();
-            on_click(mousePos.x - p.x, mousePos.y - p.y);
+            auto pos = ImGui::GetMousePos() - p;
+            on_hover(pos.x, pos.y);
+
+            // Handling left click on the field
+            if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
+                on_click(pos.x, pos.y);
         }
 
-        // Rendering the simulation
+        // Rendering the window
         ImDrawList *draw_list = ImGui::GetWindowDrawList();
 
         if (use_grid) {

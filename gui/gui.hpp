@@ -59,6 +59,24 @@ void show_material_selection_buttons(int ncols) {
 	ImGui::NewLine();
 }
 
+set<ImVec2ih> enumerate_brush_phyxels() {
+	set<ImVec2ih> ret;
+	const int delta = (brush_size - 1) / 2;
+	for (int x = 0; x < brush_size; x++) {
+		if (brush_pos.x + x - delta < 0 || brush_pos.x + x - delta >= PHX_SCENE_SIZE_X)
+			continue;
+		for (int y = 0; y < brush_size; y++) {
+			if (brush_pos.y + y - delta < 0 || brush_pos.y + y - delta >= PHX_SCENE_SIZE_Y)
+				continue;
+			ret.insert({
+				(short) (brush_pos.x + x - delta),
+				(short) (brush_pos.y + y - delta)
+			});
+		}
+	}
+	return ret;
+}
+
 vector<PhyxelWindow> phyxel_windows = {
 	PhyxelWindow(
 		"Physical View", "physical_view",
@@ -70,21 +88,41 @@ vector<PhyxelWindow> phyxel_windows = {
 				ss << " Paused ";
 			ret.title = ss.str();
 
-			for (size_t i = 0; i < PHX_SCENE_SIZE_X * PHX_SCENE_SIZE_Y; i++)
+			constexpr ImVec4 selection_color(255, 255, 255, 125);
+			const auto brush_phyxels = enumerate_brush_phyxels();
+			ImVec4 buff;
+			int x, y;
+
+			for (int i = 0; i < PHX_SCENE_SIZE_X * PHX_SCENE_SIZE_Y; i++)
 			{
-				phx::Color c = phx::scene.getColor(i);
-				ret.phyxels_colors[i % PHX_SCENE_SIZE_X][i / PHX_SCENE_SIZE_X] = 
-					IM_COL32(c.r, c.g, c.b, c.a);
+				x = i % PHX_SCENE_SIZE_X;
+				y = i / PHX_SCENE_SIZE_X;
+				auto& scene_color = phx::scene.getColor(i);
+				buff = { 
+					(float) scene_color.r,
+					(float) scene_color.g,
+					(float) scene_color.b,
+					(float) scene_color.a
+				};
+				// Highlighting a phyxel if it is under the brush
+				if (brush_phyxels.find({(short) x, (short) y}) != brush_phyxels.end())
+					buff = buff * .5 + selection_color * .5;
+				
+				ret.phyxels_colors[x][y] = IM_COL32(buff.x, buff.y, buff.z, buff.w);
 			}
 			return ret;
 		},
 		[](float x, float y){
-			phx::scene.setMaterial(
-				x / phyxel_size, y / phyxel_size,
-				phx::MaterialsList::get(materialID),
-				rand()
-			);
-		}
+			brush_pos = { (short) (x / phyxel_size), (short) (y / phyxel_size) };
+			const auto brush_phyxels = enumerate_brush_phyxels();
+			for (auto iter = brush_phyxels.begin(); iter != brush_phyxels.end(); iter++)
+				phx::scene.setMaterial(
+					iter->x, iter->y,
+					phx::MaterialsList::get(materialID),
+					rand()
+				);
+		},
+		[](float x, float y) { brush_pos = { (short) (x / phyxel_size), (short) (y / phyxel_size) }; }
 	),
 
 	PhyxelWindow(
@@ -185,6 +223,7 @@ void gui_step()
 		play = !play;
 
 	ImGui::DragFloat("Phyxel size", &phyxel_size, .01, 1, 100);
+	ImGui::DragInt("Brush size", &brush_size, 1, 1, 50);
 
 	ImGui::SeparatorText("Materials selection");
 	show_material_selection_buttons(4);
