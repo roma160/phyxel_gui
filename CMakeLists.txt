@@ -142,6 +142,7 @@ target_link_libraries(PHYXEL_ENGINE INTERFACE BOX2D)
 
 add_executable(gui "${CMAKE_SOURCE_DIR}/gui/main.cpp")
 target_link_libraries(gui PRIVATE IMGUI PHYXEL_ENGINE)
+target_include_directories(gui PRIVATE "${CMAKE_SOURCE_DIR}/gui")
 
 if(EMSCRIPTEN)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Os")

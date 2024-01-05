@@ -1,54 +1,14 @@
 // Initial source is from here
 // https://github.com/roma160/OOP_LAB2_sem2/blob/website/emscripten/main.cpp
+// 
+// This file contains all the boilerplate code to be able to work with UI (and make it kind of cross platform).
 
-#include "imgui.h"
-#include "imgui_internal.h"
-#include "imgui_impl_sdl2.h"
-#include "imgui_impl_opengl3.h"
-#include "misc/cpp/imgui_stdlib.h"
-#include "imgui_internal.h"
-#include <SDL.h>
-#if defined(IMGUI_IMPL_OPENGL_ES2)
-#include <SDL_opengles2.h>
-#else
-#include <SDL_opengl.h>
-#endif
-
-#include <tuple>
-#include <vector>
-#include <string>
-#include <sstream>
-#include <iostream>
+#include "includes.h"
 
 using namespace std;
 
-// This example can also compile and run with Emscripten! See 'Makefile.emscripten' for details.
-#ifdef __EMSCRIPTEN__
-// #include "../libs/emscripten/emscripten_mainloop_stub.h"
-#include <emscripten.h>
-#include <functional>
-static std::function<void()>            MainLoopForEmscriptenP;
-static void MainLoopForEmscripten()     { MainLoopForEmscriptenP(); }
-#define EMSCRIPTEN_MAINLOOP_BEGIN       MainLoopForEmscriptenP = [&]()
-#define EMSCRIPTEN_MAINLOOP_END         ; emscripten_set_main_loop(MainLoopForEmscripten, 0, true)
-#else
-#define EMSCRIPTEN_MAINLOOP_BEGIN
-#define EMSCRIPTEN_MAINLOOP_END
-#endif
-
-#ifdef EMSCRIPTEN_CODE
-#define DELTA_TICKS 10
-#else
-#define DELTA_TICKS 29
-#endif
-
-#define INV_COL32(COL32) (~IM_COL32_A_MASK) ^ COL32
-
-// PHYXEL ENGINE SETUP
-#include "phyxel_config.h"
-#include "phyxel.hpp"
-#define WINDOW_NAME "PhyxelEngine 1.0"
-float phyxel_size = 5; // pixels per phyxel
+// INCLUDING THE UNBOILERPLATED CODE
+#include "gui.hpp"
 
 // https://github.com/ocornut/imgui/blob/master/backends/imgui_impl_sdl2.cpp#L158
 static ImGuiKey ImGui_ImplSDL2_KeycodeToImGuiKey(int keycode)
@@ -178,41 +138,6 @@ static ImGuiKey ImGui_ImplSDL2_KeycodeToImGuiKey(int keycode)
 	return ImGuiKey_None;
 }
 
-ImVec4 clear_color(0.45f, 0.55f, 0.60f, .00f);
-bool done = false;
-char materialID = 0;
-unsigned long long int iteration = 0;
-bool play = false;
-
-void show_material_selection_button(char thisMaterialId, string label, ImU32 color) {
-	const bool selected = materialID == thisMaterialId;
-	const int button_size = 50;
-	ImGui::PushStyleColor(ImGuiCol_Button, color);
-	ImGui::PushStyleColor(ImGuiCol_Text, INV_COL32(color) | IM_COL32_A_MASK);
-	if (selected)
-		ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 6.0f);
-	if (ImGui::Button(label.c_str(), {button_size, button_size})) {
-		if (selected)
-			ImGui::PopStyleVar();
-		
-		materialID = thisMaterialId;
-	}
-	else if (selected) {
-		ImGui::PopStyleVar();
-	}
-	ImGui::PopStyleColor(2);
-}
-
-void show_material_selection_buttons(int ncols, vector<tuple<string, ImU32>> materials) {
-	for (int i = 0; i < materials.size(); i++) {
-		show_material_selection_button(
-			i, get<0>(materials[i]), get<1>(materials[i])
-		);
-		if (i % ncols < ncols - 1)
-			ImGui::SameLine();
-	}
-}
-
 // Main code
 int main(int argc, char* argv[])
 {
@@ -326,27 +251,9 @@ int main(int argc, char* argv[])
 	ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
 	ImGui_ImplOpenGL3_Init(glsl_version);
 
+    simulation_init();
 
-	// SIMULATION INIT
-	auto air = phx::MaterialsList::addMaterial("breathable air", 1, PHX_MTYPE_GAS, phx::Color(0,0,0,0));
-		air->isRemovable = true;
-	auto sand = phx::MaterialsList::addMaterial("dry sand", 4, PHX_MTYPE_POD, phx::Color(255,225,180));
-		sand->addColor(phx::Color(245,245,170));
-		sand->addColor(phx::Color(190,175,170));
-	auto water = phx::MaterialsList::addMaterial("liquid water", 3, PHX_MTYPE_LIQ, phx::Color(50,150,255));
-		water->viscosity = 3000;
-	auto metal = phx::MaterialsList::addMaterial("unknown metal", 5, PHX_MTYPE_SOL, phx::Color(170,160,170));
-	auto toxic_gas = phx::MaterialsList::addMaterial("toxic gas", 0.4, PHX_MTYPE_GAS, phx::Color(155,255,0,60));
-	auto acid = phx::MaterialsList::addMaterial("mysterious acid", 3, PHX_MTYPE_LIQ, phx::Color(100,255,100));
-		acid->addReaction(metal, air, toxic_gas);
-	auto bedrock = phx::MaterialsList::addMaterial("technical bedrock", 0, PHX_MTYPE_SOL, phx::Color(0,0,0,255)); // as for v1.0, a bedrock solid frame around the scene is suggested for multiple reasons. this is planned to be changed later
-
-	// this is important. otherwise you're going to have a segfault right at the start
-	phx::scene.fill(air);
-	phx::scene.fillFrame(bedrock); // this is optional but suggested for now
-
-
-	// Main loop
+    // Main loop
 #ifdef EMSCRIPTEN_CODE
 	emscripten_log(EM_LOG_CONSOLE, "The main loop definition begin!");
 #endif
@@ -375,121 +282,8 @@ int main(int argc, char* argv[])
 		ImGui_ImplSDL2_NewFrame();
 		ImGui::NewFrame();
 
-		
-		// DOING SIMULATION TICKS
-		if (play) {
-			phx::scene.updateAll();
-			iteration++;
-		}
-
-
-		// WINDOW RENDERING PIPELINE
-
-		// Displaying the DemoWindow
-		// https://stackoverflow.com/questions/2249282/c-c-portable-way-to-detect-debug-release
-		#ifdef _DEBUG
-		ImGui::ShowDemoWindow();
-		#endif
-
-		// Displaying the Controls window
-		ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize);
-
-		if (ImGui::Button("Toggle simulation"))
-			play = !play;
-
-		ImGui::DragFloat("Phyxel size", &phyxel_size, .01, 1, 100);
-		
-		ImGui::Text("Materials selection");
-		show_material_selection_buttons(4, {
-			{ "breath\nable\n air", IM_COL32(0,0,0,0) },
-			{ "dry \nsand", IM_COL32(255,225,180,255) },
-			{ "liquid\n water", IM_COL32(50,150,255,255) },
-			{ "unkn\nown \nmetal", IM_COL32(170,160,170,255) },
-			{ "toxic\n gas", IM_COL32(155,255,0,60) },
-			{ "myste\nrious\n acid", IM_COL32(100,255,100,255) },
-			{ "techn\nical \nbedrock", IM_COL32(0,0,0,255) },
-		});
-
-		ImGui::End();
-
-		// Displaying Simulation window
-		stringstream ss;
-		ss<<"Simulation - Iteration: "<<iteration;
-		if (!play) ss<<" Paused ";
-		ss << "###simulation_window";
-		ImGui::Begin(ss.str().c_str(), nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
-		const ImVec2 window_size = {
-			(float) (phyxel_size * PHX_SCENE_SIZE_X) + 15,
-			(float) (phyxel_size * PHX_SCENE_SIZE_Y) + 30
-		};
-		ImGui::SetWindowSize(window_size);
-
-		const auto p = ImGui::GetCursorScreenPos();
-		const auto cursor = ImGui::GetCursorPos();
-		auto available_space = ImGui::GetContentRegionAvail();
-		if(abs(available_space.x) <= 1) available_space.x = 1;
-    	if(abs(available_space.y) <= 1) available_space.y = 1;
-		// https://github.com/ocornut/imgui/issues/3149
-		ImGui::InvisibleButton("canvas", available_space,
-			ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight | ImGuiButtonFlags_AllowOverlap);
-		ImGui::SetItemAllowOverlap();
-
-		// Handling left click on the simulation field
-		if (ImGui::IsItemHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-			auto mousePos = ImGui::GetMousePos();
-            phx::scene.setMaterial(
-				(mousePos.x - p.x) / phyxel_size,
-				(mousePos.y - p.y) / phyxel_size,
-				phx::MaterialsList::get(materialID),
-				rand()
-			);
-		}
-
-		// Rendering the simulation
-		ImDrawList *draw_list = ImGui::GetWindowDrawList();
-
-		// drawing vertical lines
-		const auto lines_color = IM_COL32(255, 255, 255, 50);
-		for (size_t i = 0; i < PHX_VIEW_SIZE_X; i++)
-			draw_list->AddLine(
-				{ p.x + i*phyxel_size, p.y },
-				{ p.x + i*phyxel_size, p.y + window_size.y },
-				lines_color
-			);
-		
-		// drawing horizontal ones
-		for (size_t i = 0; i < PHX_VIEW_SIZE_Y; i++)
-			draw_list->AddLine(
-				{ p.x, p.y + i*phyxel_size },
-				{ p.x + window_size.x, p.y + i*phyxel_size },
-				lines_color
-			);
-
-		// Drawing phyxels
-		for (size_t i = 0; i < PHX_SCENE_SIZE_X * PHX_SCENE_SIZE_Y; i++) {
-			int x = i%PHX_SCENE_SIZE_X;
-			int y = i/PHX_SCENE_SIZE_X;
-            phx::Color c = phx::scene.getColor(i);
-			draw_list->AddRectFilled(
-				{ p.x + x*phyxel_size, p.y + y*phyxel_size },
-				{ p.x + (x + 1)*phyxel_size, p.y + (y + 1)*phyxel_size },
-				IM_COL32(c.r, c.g, c.b, c.a)
-			);
-        }
-
-
-		ImGui::SetCursorPos(cursor);
-		ImGui::End();
-
-		//ImGui::getScroll
-		//ImGui::GetScroll
-		// ImGuiWindow* b_window = ImGui::GetCurrentWindow();
-		// const Vec2 scroll = ImGui::GetCurrentWindow()->Scroll;
-		// if(scroll.abs() > 0)
-		// auto context = ImGui::GetCurrentContext();
-		// field.set_debug_message(to_string((int) context->WheelingWindow));
-
-		//display_control_window(field);
+        simulation_step();
+        gui_step();
 		
 		const auto delta_ticks = DELTA_TICKS;
 		auto b = SDL_GetTicks();
