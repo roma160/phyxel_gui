@@ -16,6 +16,7 @@
 
 #include <tuple>
 #include <vector>
+#include <map>
 #include <string>
 #include <sstream>
 #include <iostream>

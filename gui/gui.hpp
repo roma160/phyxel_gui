@@ -29,11 +29,25 @@ void show_material_selection_button(char thisMaterialId, string label, ImU32 col
 
 /// @brief Generate a table of buttons for material selection
 /// @param ncols number of columns in the table
-/// @param materials list of materials which are (label, color) pairs (the materialId is selected using their index in the list)
-void show_material_selection_buttons(int ncols, vector<tuple<string, ImU32>> materials) {
-	for (int i = 0; i < materials.size(); i++) {
+string wrap_label(const string& label) {
+	static map<string, string> precomputed;
+	auto buff = precomputed.find(label);
+	if (buff != precomputed.end()) 
+		return buff->second;
+	
+	string res = label;
+	for (int i = 5; i < res.size(); i += 6)
+		res.insert(i, 1, '\n');
+	precomputed[label] = res;
+	return res;
+}
+void show_material_selection_buttons(int ncols) {
+	for (int i = 0; i < phx::MaterialsList::getSize(); i++) {
+		auto& material = phx::MaterialsList::get(i);
+		auto& c = material->getColor(0);
 		show_material_selection_button(
-			i, get<0>(materials[i]), get<1>(materials[i])
+			i, wrap_label(material->name),
+			IM_COL32(c.r, c.g, c.b, c.a)
 		);
 		if (i % ncols < ncols - 1)
 			ImGui::SameLine();
@@ -165,15 +179,7 @@ void gui_step()
 	ImGui::DragFloat("Phyxel size", &phyxel_size, .01, 1, 100);
 
 	ImGui::SeparatorText("Materials selection");
-	show_material_selection_buttons(4, {
-		{"breath\nable\n air", IM_COL32(0, 0, 0, 0)},
-		{"dry \nsand", IM_COL32(255, 225, 180, 255)},
-		{"liquid\n water", IM_COL32(50, 150, 255, 255)},
-		{"unkn\nown \nmetal", IM_COL32(170, 160, 170, 255)},
-		{"toxic\n gas", IM_COL32(155, 255, 0, 60)},
-		{"myste\nrious\n acid", IM_COL32(100, 255, 100, 255)},
-		{"techn\nical \nbedrock", IM_COL32(0, 0, 0, 255)},
-	});
+	show_material_selection_buttons(4);
 
 	ImGui::SeparatorText("Windows toggles");
 	for (int i = 0; i < phyxel_windows.size(); i++) {
