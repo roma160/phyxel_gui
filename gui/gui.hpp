@@ -1,17 +1,8 @@
 // This file actually contains all the logic behind the UI
 
 #include "includes.h"
-
-// PHYXEL ENGINE SETUP
-#include "phyxel_config.h"
-
-#define WINDOW_NAME "PhyxelEngine 1.0"
-ImVec4 clear_color(0.45f, 0.55f, 0.60f, .00f);
-float phyxel_size = 5; // actual pixels per phyxel
-bool done = false;
-char materialID = 0;
-unsigned long long int iteration = 0;
-bool play = false;
+#include "static_variables.hpp"
+#include "phyxel_window.hpp"
 
 /// @brief Displays single button to select a material
 /// @param thisMaterialId id of the material to be selected on click
@@ -49,7 +40,36 @@ void show_material_selection_buttons(int ncols, vector<tuple<string, ImU32>> mat
 	}
 }
 
-// THREE FUNCTIONS RESPONSIBLE FOR THE LOOK OF THE GUI
+vector<PhyxelWindow> phyxel_windows = {
+	PhyxelWindow(
+		"physical_window",
+		[](){
+			PhyxelWindowRenderData ret;
+			stringstream ss;
+			ss << "Simulation - Iteration: " << iteration;
+			if (!play)
+				ss << " Paused ";
+			ret.title = ss.str();
+
+			for (size_t i = 0; i < PHX_SCENE_SIZE_X * PHX_SCENE_SIZE_Y; i++)
+			{
+				phx::Color c = phx::scene.getColor(i);
+				ret.phyxels_colors[i % PHX_SCENE_SIZE_X][i / PHX_SCENE_SIZE_X] = 
+					IM_COL32(c.r, c.g, c.b, c.a);
+			}
+			return ret;
+		},
+		[](float x, float y){
+			phx::scene.setMaterial(
+				x / phyxel_size, y / phyxel_size,
+				phx::MaterialsList::get(materialID),
+				rand()
+			);
+		}
+	)
+};
+
+// THREE FUNCTIONS TO BE CALLED IN THE MAIN.CPP
 
 void simulation_init()
 {
@@ -109,71 +129,8 @@ void gui_step()
 
 	ImGui::End();
 
-	// Displaying Simulation window
-	stringstream ss;
-	ss << "Simulation - Iteration: " << iteration;
-	if (!play)
-		ss << " Paused ";
-	ss << "###simulation_window";
-	ImGui::Begin(ss.str().c_str(), nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
-	const ImVec2 window_size = {
-		(float)(phyxel_size * PHX_SCENE_SIZE_X) + 15,
-		(float)(phyxel_size * PHX_SCENE_SIZE_Y) + 30};
-	ImGui::SetWindowSize(window_size);
-
-	const auto p = ImGui::GetCursorScreenPos();
-	const auto cursor = ImGui::GetCursorPos();
-	auto available_space = ImGui::GetContentRegionAvail();
-	if (abs(available_space.x) <= 1)
-		available_space.x = 1;
-	if (abs(available_space.y) <= 1)
-		available_space.y = 1;
-	// https://github.com/ocornut/imgui/issues/3149
-	ImGui::InvisibleButton("canvas", available_space,
-						   ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight | ImGuiButtonFlags_AllowOverlap);
-	ImGui::SetItemAllowOverlap();
-
-	// Handling left click on the simulation field
-	if (ImGui::IsItemHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Left))
-	{
-		auto mousePos = ImGui::GetMousePos();
-		phx::scene.setMaterial(
-			(mousePos.x - p.x) / phyxel_size,
-			(mousePos.y - p.y) / phyxel_size,
-			phx::MaterialsList::get(materialID),
-			rand());
+	// Displaying Simulation windows
+	for (int i = 0; i < phyxel_windows.size(); i++) {
+		phyxel_windows[i].render();
 	}
-
-	// Rendering the simulation
-	ImDrawList *draw_list = ImGui::GetWindowDrawList();
-
-	// drawing vertical lines
-	const auto lines_color = IM_COL32(255, 255, 255, 50);
-	for (size_t i = 0; i < PHX_VIEW_SIZE_X; i++)
-		draw_list->AddLine(
-			{p.x + i * phyxel_size, p.y},
-			{p.x + i * phyxel_size, p.y + window_size.y},
-			lines_color);
-
-	// drawing horizontal ones
-	for (size_t i = 0; i < PHX_VIEW_SIZE_Y; i++)
-		draw_list->AddLine(
-			{p.x, p.y + i * phyxel_size},
-			{p.x + window_size.x, p.y + i * phyxel_size},
-			lines_color);
-
-	// Drawing phyxels
-	for (size_t i = 0; i < PHX_SCENE_SIZE_X * PHX_SCENE_SIZE_Y; i++)
-	{
-		int x = i % PHX_SCENE_SIZE_X;
-		int y = i / PHX_SCENE_SIZE_X;
-		phx::Color c = phx::scene.getColor(i);
-		draw_list->AddRectFilled(
-			{p.x + x * phyxel_size, p.y + y * phyxel_size},
-			{p.x + (x + 1) * phyxel_size, p.y + (y + 1) * phyxel_size},
-			IM_COL32(c.r, c.g, c.b, c.a));
-	}
-
-	ImGui::SetCursorPos(cursor);
-	ImGui::End();
 }
