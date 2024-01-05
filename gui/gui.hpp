@@ -12,7 +12,11 @@ void show_material_selection_button(char thisMaterialId, string label, ImU32 col
 	const bool selected = materialID == thisMaterialId;
 	const int button_size = 50;
 	ImGui::PushStyleColor(ImGuiCol_Button, color);
-	ImGui::PushStyleColor(ImGuiCol_Text, INV_COL32(color) | IM_COL32_A_MASK);
+	ImU32 label_color;
+	if (color >> IM_COL32_A_SHIFT < 5)
+		label_color = IM_COL32_WHITE;
+	else label_color = INV_COL32(color) | IM_COL32_A_MASK;
+	ImGui::PushStyleColor(ImGuiCol_Text, label_color);
 	if (selected)
 		ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 6.0f);
 	if (ImGui::Button(label.c_str(), {button_size, button_size})) {
@@ -141,7 +145,11 @@ void simulation_init()
 	acid->addReaction(metal, air, toxic_gas);
 	auto bedrock = phx::MaterialsList::addMaterial("technical bedrock", 0, PHX_MTYPE_SOL, phx::Color(0, 0, 0, 255)); // as for v1.0, a bedrock solid frame around the scene is suggested for multiple reasons. this is planned to be changed later
 
-	
+	auto wood = phx::MaterialsList::addMaterial("wood", 2, PHX_MTYPE_SOL, {217, 134, 0}, .25, true);
+	auto carbonic_gas = phx::MaterialsList::addMaterial("carbonic gas", 0.3, PHX_MTYPE_GAS, {255, 255, 255, 0});
+	auto ash = phx::MaterialsList::addMaterial("ash", 3.5, PHX_MTYPE_POD, {158, 158, 158});
+	wood->setBurningParams(true, 1, ash, carbonic_gas, 200);
+	acid->addReaction(wood, air, toxic_gas, 100, 300);
 
 	// this is important. otherwise you're going to have a segfault right at the start
 	phx::scene.fill(air);

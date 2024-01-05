@@ -19,6 +19,7 @@
 #include <map>
 #include <string>
 #include <sstream>
+#include <chrono>
 #include <iostream>
 
 // This example can also compile and run with Emscripten! See 'Makefile.emscripten' for details.
