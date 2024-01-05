@@ -1,6 +1,8 @@
 # [Phyxel](https://gitlab.com/delta_atell/phyxel) GUI
 GUI implementation for the [Phyxel cellular physics library project](https://gitlab.com/delta_atell/phyxel).
 
+https://github.com/roma160/phyxel_gui/assets/17747914/a083a8ef-4a52-4b61-b30d-649f609e5bda
+
 As per now only the basic behavior illustrated in [Phyxel README](https://gitlab.com/delta_atell/phyxel/-/blob/main/README.md?ref_type=heads&plain=1#L1) is implemented.
 
 The project organization is the same as in my previous project [OOP_LAB2_sem2](https://github.com/roma160/OOP_LAB2_sem2).
