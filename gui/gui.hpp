@@ -47,8 +47,8 @@ string wrap_label(const string& label) {
 }
 void show_material_selection_buttons(int ncols) {
 	for (int i = 0; i < phx::MaterialsList::getSize(); i++) {
-		auto& material = phx::MaterialsList::get(i);
-		auto& c = material->getColor(0);
+		const auto& material = phx::MaterialsList::get(i);
+		const auto c = material->getColor(0);
 		show_material_selection_button(
 			i, wrap_label(material->name),
 			IM_COL32(c.r, c.g, c.b, c.a)
